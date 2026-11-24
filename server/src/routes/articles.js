@@ -1,0 +1,4 @@
+import {Router} from "express";import Article from "../models/Article.js";import {protect,roles} from "../middleware.js";const r=Router();
+r.get("/",protect,async(req,res)=>{const f={};if(req.user.role==="customer")f.published=true;if(req.query.search)f.title={$regex:req.query.search,$options:"i"};res.json({articles:await Article.find(f).populate("author","name").sort({updatedAt:-1})})});
+r.post("/",protect,roles("agent","admin"),async(req,res)=>{const {title,body}=req.body;if(!title||!body)return res.status(400).json({message:"Title and body are required"});res.status(201).json({article:await Article.create({...req.body,author:req.user._id})})});
+r.patch("/:id",protect,roles("agent","admin"),async(req,res)=>{const a=await Article.findByIdAndUpdate(req.params.id,req.body,{new:true});if(!a)return res.sendStatus(404);res.json({article:a})});export default r;
